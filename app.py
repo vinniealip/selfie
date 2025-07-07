@@ -49,10 +49,12 @@ uploaded_file = st.file_uploader("Upload a clear selfie (JPG/PNG)", type=["jpg",
 
 # --- IMAGE UPLOAD TO PUBLIC URL ---
 def upload_to_imgbb(image_bytes):
+    image_file = BytesIO(image_bytes)
+    image_file.name = "selfie.jpg"
     response = requests.post(
         "https://api.imgbb.com/1/upload",
         params={"key": IMGBB_API_KEY},
-        files={"image": image_bytes}
+        files={"image": image_file}
     )
     response.raise_for_status()
     return response.json()["data"]["url"]
