@@ -51,11 +51,11 @@ def preprocess_image(image: Image.Image, max_width=512, quality=85):
 def encode_image_to_base64(image_bytes):
     return base64.b64encode(image_bytes).decode("utf-8")
 
-# Stylize image using Hugging Face inference API (correct endpoint)
+# Stylize image using Hugging Face inference API (PhotoMaker V2)
 def stylize_image_with_hf(image_bytes, prompt):
     base64_str = encode_image_to_base64(image_bytes)
     response = requests.post(
-        "https://timbrooks-instruct-pix2pix.hf.space/run/predict",
+        "https://tencentarc-photomaker-v2.hf.space/run/predict",
         json={"data": [f"data:image/jpeg;base64,{base64_str}", prompt]},
         headers={"Content-Type": "application/json"}
     )
