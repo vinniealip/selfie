@@ -7,10 +7,12 @@ from PIL import Image
 from io import BytesIO
 import replicate
 from streamlit_image_comparison import image_comparison
+import base64
 
 # --- CONFIG ---
-REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")  # Set via Streamlit secrets
+REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
 os.environ["REPLICATE_API_TOKEN"] = REPLICATE_API_TOKEN
+IMGBB_API_KEY = os.getenv("IMGBB_API_KEY")  # Set via Streamlit secrets
 
 # Define models
 REALISTIC_MODEL = "fofr/anything-style-transfer"
@@ -46,9 +48,20 @@ selected_theme = st.selectbox("Choose a style:", list(themes.keys()))
 # File upload
 uploaded_file = st.file_uploader("Upload a clear selfie (JPG/PNG)", type=["jpg", "jpeg", "png"])
 
+# --- IMAGE UPLOAD TO PUBLIC URL ---
+def upload_to_imgbb(image_bytes):
+    base64_img = base64.b64encode(image_bytes).decode("utf-8")
+    response = requests.post(
+        "https://api.imgbb.com/1/upload",
+        params={"key": IMGBB_API_KEY},
+        data={"image": base64_img}
+    )
+    response.raise_for_status()
+    return response.json()["data"]["url"]
+
 # --- PROCESSING ---
 def stylize_image(image_bytes, theme):
-    uploaded_url = replicate.upload(BytesIO(image_bytes))  # ✅ correct helper method
+    uploaded_url = upload_to_imgbb(image_bytes)
     prompt = theme["prompt"]
 
     if theme["model"] == "realistic":
