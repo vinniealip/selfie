@@ -6,11 +6,13 @@ import os
 from PIL import Image
 from io import BytesIO
 import replicate
+from replicate.client import Client
 from streamlit_image_comparison import image_comparison
 
 # --- CONFIG ---
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")  # Set via Streamlit secrets
 os.environ["REPLICATE_API_TOKEN"] = REPLICATE_API_TOKEN
+client = Client(api_token=REPLICATE_API_TOKEN)
 
 # Define models
 REALISTIC_MODEL = "fofr/anything-style-transfer"
@@ -48,7 +50,7 @@ uploaded_file = st.file_uploader("Upload a clear selfie (JPG/PNG)", type=["jpg",
 
 # --- PROCESSING ---
 def stylize_image(image_bytes, theme):
-    uploaded_url = replicate.upload(image_bytes)
+    uploaded_url = client.files.upload(image_bytes)
     prompt = theme["prompt"]
 
     if theme["model"] == "realistic":
