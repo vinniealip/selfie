@@ -17,7 +17,7 @@ IMGBB_API_KEY = os.getenv("IMGBB_API_KEY")  # Set via Streamlit secrets
 REALISTIC_MODEL = "fofr/anything-style-transfer"
 REALISTIC_VERSION = "6ce016168c49dc288d41e84003d81f1c4c234b421b5ce01d9a2aa660b66d6b16"
 STYLIZED_MODEL = "tencentarc/gfpgan"
-STYLIZED_VERSION = "928d7cf3bcd6b1b7f423ab264cfaac3e81def42e5df087824"
+STYLIZED_VERSION = "latest"
 
 # --- UI ---
 st.set_page_config(page_title="AI Profile Picture Maker", layout="centered")
