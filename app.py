@@ -17,7 +17,7 @@ IMGBB_API_KEY = os.getenv("IMGBB_API_KEY")  # Set via Streamlit secrets
 REALISTIC_MODEL = "fofr/anything-style-transfer"
 REALISTIC_VERSION = "6ce016168c49dc288d41e84003d81f1c4c234b421b5ce01d9a2aa660b66d6b16"
 STYLIZED_MODEL = "tencentarc/gfpgan"
-STYLIZED_VERSION = "latest"
+STYLIZED_VERSION = "928d7cf3bcd6b1b7f423ab264cfaac3e81def42e5df087824"
 
 # --- UI ---
 st.set_page_config(page_title="AI Profile Picture Maker", layout="centered")
@@ -72,9 +72,10 @@ def stylize_image(image_bytes, theme):
     else:
         output = replicate.run(
             f"{STYLIZED_MODEL}:{STYLIZED_VERSION}",
-            input={"image": uploaded_url, "style": prompt}
+            input={"img": uploaded_url}
         )
-    return output["output"]
+
+    return output if isinstance(output, str) else output[0]
 
 if uploaded_file:
     original_image = Image.open(uploaded_file).convert("RGB")
