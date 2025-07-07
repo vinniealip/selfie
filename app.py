@@ -1,23 +1,14 @@
-# AI Profile Picture Maker MVP using Streamlit + Replicate API with Style Themes and Before/After Slider
+# AI Profile Picture Maker MVP using Streamlit + Hugging Face (Free Alternative to Replicate)
 
 import streamlit as st
 import requests
 import os
+import base64
 from PIL import Image
 from io import BytesIO
-import replicate
 from streamlit_image_comparison import image_comparison
 
-# --- CONFIG ---
-REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
-os.environ["REPLICATE_API_TOKEN"] = REPLICATE_API_TOKEN
-IMGBB_API_KEY = os.getenv("IMGBB_API_KEY")  # Set via Streamlit secrets
-
-# Define model
-MODEL = "fofr/anything-style-transfer"
-VERSION = "6ce016168c49dc288d41e84003d81f1c4c234b421b5ce01d9a2aa660b66d6b16"
-
-# --- UI ---
+# --- UI CONFIG ---
 st.set_page_config(page_title="AI Profile Picture Maker", layout="centered")
 st.markdown("""
     <style>
@@ -34,11 +25,11 @@ st.markdown("Upload a selfie and choose a theme to get your AI-stylized profile 
 
 # Themes (prompts)
 themes = {
-    "Professional": {"prompt": "professional portrait, studio lighting"},
-    "Casual": {"prompt": "natural lighting casual photo"},
-    "Dating / Soft Glam": {"prompt": "romantic soft glam portrait"},
-    "Anime Style": {"prompt": "anime style portrait"},
-    "Fantasy Art": {"prompt": "fantasy elf, digital painting"}
+    "Professional": "professional portrait, studio lighting",
+    "Casual": "natural lighting casual photo",
+    "Dating / Soft Glam": "romantic soft glam portrait",
+    "Anime Style": "anime style portrait",
+    "Fantasy Art": "fantasy elf, digital painting"
 }
 
 selected_theme = st.selectbox("Choose a style:", list(themes.keys()))
@@ -46,27 +37,20 @@ selected_theme = st.selectbox("Choose a style:", list(themes.keys()))
 # File upload
 uploaded_file = st.file_uploader("Upload a clear selfie (JPG/PNG)", type=["jpg", "jpeg", "png"])
 
-# Upload image to imgbb to get a URL
-def upload_to_imgbb(image_bytes):
-    image_file = BytesIO(image_bytes)
-    image_file.name = "selfie.jpg"
+# Convert to base64 string
+def encode_image_to_base64(image_bytes):
+    return base64.b64encode(image_bytes).decode("utf-8")
+
+# Stylize image using Hugging Face inference API (e.g. timbrooks/instruct-pix2pix)
+def stylize_image_with_hf(image_bytes, prompt):
+    base64_str = encode_image_to_base64(image_bytes)
     response = requests.post(
-        "https://api.imgbb.com/1/upload",
-        params={"key": IMGBB_API_KEY},
-        files={"image": image_file}
+        "https://hf.space/embed/timbrooks/instruct-pix2pix/api/predict/",
+        json={"data": [f"data:image/jpeg;base64,{base64_str}", prompt]}
     )
     response.raise_for_status()
-    return response.json()["data"]["url"]
-
-# Run the model
-
-def stylize_image(image_bytes, prompt):
-    uploaded_url = upload_to_imgbb(image_bytes)
-    output = replicate.run(
-        f"{MODEL}:{VERSION}",
-        input={"image": uploaded_url, "prompt": prompt}
-    )
-    return output if isinstance(output, str) else output[0]
+    result_url = response.json()["data"][0]
+    return result_url
 
 # Process input
 if uploaded_file:
@@ -78,13 +62,12 @@ if uploaded_file:
             try:
                 uploaded_file.seek(0)
                 image_bytes = uploaded_file.read()
-                result_url = stylize_image(image_bytes, themes[selected_theme]["prompt"])
+                result_url = stylize_image_with_hf(image_bytes, themes[selected_theme])
                 result_img = Image.open(BytesIO(requests.get(result_url).content))
 
                 st.success(f"Here is your {selected_theme} style profile picture!")
                 st.image(result_img, caption=f"{selected_theme} Style", use_container_width=True)
 
-                # Before/after
                 st.markdown("### Before & After")
                 image_comparison(
                     img1=original_image,
@@ -99,4 +82,4 @@ if uploaded_file:
                 st.error(f"Failed to generate image: {e}")
 
 st.markdown("---")
-st.caption("Powered by AI. Try different styles to see what fits your vibe best.")
+st.caption("Powered by Hugging Face. Try different styles to see what fits your vibe best.")
