@@ -1,58 +1,91 @@
-# AI Profile Picture Maker MVP using Streamlit + Replicate API
+# AI Profile Picture Maker MVP using Streamlit + Replicate API with Style Themes and Before/After Slider (Dual Model Version)
 
 import streamlit as st
 import requests
 import os
 from PIL import Image
 from io import BytesIO
+import replicate
+from streamlit_image_comparison import image_comparison
 
 # --- CONFIG ---
-REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")  # Set this in your local environment or Streamlit Cloud
-MODEL_VERSION = "tencentarc/stylegan3"
+REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")  # Set via Streamlit secrets
+os.environ["REPLICATE_API_TOKEN"] = REPLICATE_API_TOKEN
+
+# Define models
+REALISTIC_MODEL = "fofr/anything-style-transfer"
+REALISTIC_VERSION = "e226a16a791ba37a07e0a697835fb3cdce7011cc946265c9ef82c78192116c7d"
+STYLIZED_MODEL = "lucataco/face-to-style"
+STYLIZED_VERSION = "db2c9f8f83ae738df1f69e7f3c68a1227ea0c7384b27081f5c0112f937cb4090"
 
 # --- UI ---
 st.set_page_config(page_title="AI Profile Picture Maker", layout="centered")
-st.title("🎨 AI Profile Picture Maker")
-st.markdown("Upload a selfie and get amazing themed profile pictures!")
+st.markdown("""
+    <style>
+        .main {background-color: #f7f9fc;}
+        h1 {color: #1a1a1a; font-family: 'Segoe UI', sans-serif; text-align: center;}
+        .stButton > button {background-color: #4CAF50; color: white; padding: 10px 20px; border-radius: 8px; font-size: 16px;}
+        .stDownloadButton > button {background-color: #2196F3; color: white; padding: 10px 20px; border-radius: 8px; font-size: 16px;}
+        .stMarkdown {text-align: center; font-size: 18px;}
+    </style>
+""", unsafe_allow_html=True)
 
-# Theme selector
-themes = ["Professional", "Casual", "Dating", "Anime", "Fantasy"]
-selected_theme = st.selectbox("Choose a style:", themes)
+st.title("🎨 AI Profile Picture Maker")
+st.markdown("Upload a selfie and choose a theme to get your AI-stylized profile picture!")
+
+# Theme selector with model types
+themes = {
+    "Professional": {"prompt": "professional portrait", "model": "realistic"},
+    "Casual": {"prompt": "natural lighting casual photo", "model": "realistic"},
+    "Dating / Soft Glam": {"prompt": "romantic soft glam portrait", "model": "realistic"},
+    "Anime Style": {"prompt": "anime", "model": "stylized"},
+    "Fantasy Art": {"prompt": "fantasy elf", "model": "stylized"}
+}
+selected_theme = st.selectbox("Choose a style:", list(themes.keys()))
 
 # File upload
 uploaded_file = st.file_uploader("Upload a clear selfie (JPG/PNG)", type=["jpg", "jpeg", "png"])
 
-# --- FUNCTION TO CALL REPLICATE API ---
-def generate_image_with_replicate(image_bytes, theme):
-    url = f"https://api.replicate.com/v1/predictions"
-    headers = {
-        "Authorization": f"Token {REPLICATE_API_TOKEN}",
-        "Content-Type": "application/json",
-    }
-    # For demonstration, this is a placeholder payload. Customize based on the chosen model.
-    payload = {
-        "version": MODEL_VERSION,
-        "input": {
-            "image": "data:image/jpeg;base64," + image_bytes.encode("base64"),
-            "style": theme.lower()
-        }
-    }
-    response = requests.post(url, json=payload, headers=headers)
-    return response.json()
-
 # --- PROCESSING ---
+def stylize_image(image_bytes, theme):
+    prompt = theme["prompt"]
+    if theme["model"] == "realistic":
+        output = replicate.run(
+            f"{REALISTIC_MODEL}:{REALISTIC_VERSION}",
+            input={"image": image_bytes, "prompt": prompt}
+        )
+    else:
+        output = replicate.run(
+            f"{STYLIZED_MODEL}:{STYLIZED_VERSION}",
+            input={"image": image_bytes, "style": prompt}
+        )
+    return output["output"]
+
 if uploaded_file:
-    st.image(uploaded_file, caption="Original Selfie", width=300)
-    if st.button("Generate My AI Profile Pic"):
-        with st.spinner("Generating... this may take 20-40 seconds"):
-            # Simulate API call - replace this with real Replicate API later
+    original_image = Image.open(uploaded_file).convert("RGB")
+    st.image(original_image, caption="Original Selfie", use_column_width=True)
+    if st.button("Generate My AI-Styled Pic"):
+        with st.spinner("Generating your AI-stylized image... this may take 30–60 seconds"):
             try:
-                img = Image.open(uploaded_file).convert("RGB")
-                st.success("Your AI profile picture is ready!")
-                st.image(img, caption=f"{selected_theme} Style (sample)", width=300)
-                st.download_button("Download Image", data=uploaded_file.getvalue(), file_name="ai_profile_pic.jpg")
+                image_bytes = uploaded_file.read()
+                result_url = stylize_image(image_bytes, themes[selected_theme])
+
+                result_img = Image.open(BytesIO(requests.get(result_url).content))
+                st.success(f"Here is your {selected_theme} style profile picture!")
+                st.image(result_img, caption=f"{selected_theme} Style", use_column_width=True)
+
+                # Show before/after comparison
+                st.markdown("### Before & After")
+                image_comparison(
+                    img1=original_image,
+                    img2=result_img,
+                    label1="Before",
+                    label2="After"
+                )
+
+                st.download_button("Download Image", data=requests.get(result_url).content, file_name="styled_profile_pic.jpg")
             except Exception as e:
                 st.error(f"Failed to generate image: {e}")
 
 st.markdown("---")
-st.caption("This is a demo version. Final version will include real AI generation and HD output.")
+st.caption("Powered by AI. Try different styles to see what fits your vibe best.")
