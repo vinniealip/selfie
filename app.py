@@ -37,6 +37,16 @@ selected_theme = st.selectbox("Choose a style:", list(themes.keys()))
 # File upload
 uploaded_file = st.file_uploader("Upload a clear selfie (JPG/PNG)", type=["jpg", "jpeg", "png"])
 
+# Resize and compress image
+def preprocess_image(image: Image.Image, max_width=512, quality=85):
+    if image.width > max_width:
+        new_height = int(max_width * image.height / image.width)
+        image = image.resize((max_width, new_height))
+    buffer = BytesIO()
+    image.save(buffer, format="JPEG", quality=quality)
+    buffer.seek(0)
+    return buffer.read()
+
 # Convert to base64 string
 def encode_image_to_base64(image_bytes):
     return base64.b64encode(image_bytes).decode("utf-8")
@@ -61,7 +71,7 @@ if uploaded_file:
         with st.spinner("Generating your AI-stylized image... this may take 30–60 seconds"):
             try:
                 uploaded_file.seek(0)
-                image_bytes = uploaded_file.read()
+                image_bytes = preprocess_image(original_image)
                 result_url = stylize_image_with_hf(image_bytes, themes[selected_theme])
                 result_img = Image.open(BytesIO(requests.get(result_url).content))
 
