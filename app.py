@@ -16,8 +16,8 @@ IMGBB_API_KEY = os.getenv("IMGBB_API_KEY")  # Set via Streamlit secrets
 # Define models
 REALISTIC_MODEL = "fofr/anything-style-transfer"
 REALISTIC_VERSION = "6ce016168c49dc288d41e84003d81f1c4c234b421b5ce01d9a2aa660b66d6b16"
-STYLIZED_MODEL = "fofr/anything-v4.0"
-STYLIZED_VERSION = "f0b21747039c3c68e99f2e1ce135a4d71c9e8fda2fe7b7c90ec41eab35c0b3f6"
+STYLIZED_MODEL = "lucataco/face-to-style"
+STYLIZED_VERSION = "db2c9f8f83ae738df1f69e7f3c68a1227ea0c7384b27081f5c0112f937cb4090"
 
 # --- UI ---
 st.set_page_config(page_title="AI Profile Picture Maker", layout="centered")
@@ -72,7 +72,7 @@ def stylize_image(image_bytes, theme):
     else:
         output = replicate.run(
         f"{STYLIZED_MODEL}:{STYLIZED_VERSION}",
-        input={"image": uploaded_url, "prompt": prompt}
+        input={"image": uploaded_url, "style": prompt}
     )
 
     return output if isinstance(output, str) else output[0]
