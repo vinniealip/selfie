@@ -51,16 +51,20 @@ def preprocess_image(image: Image.Image, max_width=512, quality=85):
 def encode_image_to_base64(image_bytes):
     return base64.b64encode(image_bytes).decode("utf-8")
 
-# Stylize image using Hugging Face inference API (e.g. timbrooks/instruct-pix2pix)
+# Stylize image using Hugging Face inference API (correct endpoint)
 def stylize_image_with_hf(image_bytes, prompt):
     base64_str = encode_image_to_base64(image_bytes)
     response = requests.post(
-        "https://hf.space/embed/timbrooks/instruct-pix2pix/api/predict/",
-        json={"data": [f"data:image/jpeg;base64,{base64_str}", prompt]}
+        "https://timbrooks-instruct-pix2pix.hf.space/run/predict",
+        json={"data": [f"data:image/jpeg;base64,{base64_str}", prompt]},
+        headers={"Content-Type": "application/json"}
     )
     response.raise_for_status()
-    result_url = response.json()["data"][0]
-    return result_url
+    data = response.json()
+    if "data" in data and isinstance(data["data"], list):
+        return data["data"][0]
+    else:
+        raise ValueError("Unexpected response format from Hugging Face")
 
 # Process input
 if uploaded_file:
