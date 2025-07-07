@@ -72,7 +72,12 @@ def stylize_image(image_bytes, theme):
     else:
         output = replicate.run(
             f"{STYLIZED_MODEL}:{STYLIZED_VERSION}",
-            input={"img": uploaded_url}
+            input={
+                "image": uploaded_url,
+                "version": 1.4,
+                "scale": 2,
+                "face_enhance": True
+            }
         )
 
     return output if isinstance(output, str) else output[0]
