@@ -76,7 +76,7 @@ def stylize_image(image_bytes, theme):
 
 if uploaded_file:
     original_image = Image.open(uploaded_file).convert("RGB")
-    st.image(original_image, caption="Original Selfie", use_column_width=True)
+    st.image(original_image, caption="Original Selfie", use_container_width=True)
     if st.button("Generate My AI-Styled Pic"):
         with st.spinner("Generating your AI-stylized image... this may take 30–60 seconds"):
             try:
@@ -85,7 +85,7 @@ if uploaded_file:
 
                 result_img = Image.open(BytesIO(requests.get(result_url).content))
                 st.success(f"Here is your {selected_theme} style profile picture!")
-                st.image(result_img, caption=f"{selected_theme} Style", use_column_width=True)
+                st.image(result_img, caption=f"{selected_theme} Style", use_container_width=True)
 
                 # Show before/after comparison
                 st.markdown("### Before & After")
