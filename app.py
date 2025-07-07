@@ -82,7 +82,9 @@ if uploaded_file:
     if st.button("Generate My AI-Styled Pic"):
         with st.spinner("Generating your AI-stylized image... this may take 30–60 seconds"):
             try:
+                uploaded_file.seek(0)
                 image_bytes = uploaded_file.read()
+                st.write(f"🔍 Debug: Uploaded image size = {len(image_bytes) / 1024:.2f} KB")
                 result_url = stylize_image(image_bytes, themes[selected_theme])
 
                 result_img = Image.open(BytesIO(requests.get(result_url).content))
