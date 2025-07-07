@@ -48,16 +48,18 @@ uploaded_file = st.file_uploader("Upload a clear selfie (JPG/PNG)", type=["jpg",
 
 # --- PROCESSING ---
 def stylize_image(image_bytes, theme):
+    uploaded_url = replicate.files.upload(image_bytes)
     prompt = theme["prompt"]
+
     if theme["model"] == "realistic":
         output = replicate.run(
             f"{REALISTIC_MODEL}:{REALISTIC_VERSION}",
-            input={"image": image_bytes, "prompt": prompt}
+            input={"image": uploaded_url, "prompt": prompt}
         )
     else:
         output = replicate.run(
             f"{STYLIZED_MODEL}:{STYLIZED_VERSION}",
-            input={"image": image_bytes, "style": prompt}
+            input={"image": uploaded_url, "style": prompt}
         )
     return output["output"]
 
