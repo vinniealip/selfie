@@ -16,8 +16,6 @@ IMGBB_API_KEY = os.getenv("IMGBB_API_KEY")  # Set via Streamlit secrets
 # Define models
 REALISTIC_MODEL = "fofr/anything-style-transfer"
 REALISTIC_VERSION = "6ce016168c49dc288d41e84003d81f1c4c234b421b5ce01d9a2aa660b66d6b16"
-STYLIZED_MODEL = "lucataco/face-to-style"
-STYLIZED_VERSION = "db2c9f8f83ae738df1f69e7f3c68a1227ea0c7384b27081f5c0112f937cb4090"
 
 # --- UI ---
 st.set_page_config(page_title="AI Profile Picture Maker", layout="centered")
@@ -36,12 +34,13 @@ st.markdown("Upload a selfie and choose a theme to get your AI-stylized profile 
 
 # Theme selector with model types
 themes = {
-    "Professional": {"prompt": "professional portrait", "model": "realistic"},
-    "Casual": {"prompt": "natural lighting casual photo", "model": "realistic"},
-    "Dating / Soft Glam": {"prompt": "romantic soft glam portrait", "model": "realistic"},
-    "Anime Style": {"prompt": "anime", "model": "stylized"},
-    "Fantasy Art": {"prompt": "fantasy elf", "model": "stylized"}
+    "Professional": {"prompt": "professional portrait, studio lighting"},
+    "Casual": {"prompt": "natural lighting casual photo"},
+    "Dating / Soft Glam": {"prompt": "romantic soft glam portrait"},
+    "Anime Style": {"prompt": "anime style portrait"},
+    "Fantasy Art": {"prompt": "fantasy elf, digital painting"}
 }
+
 selected_theme = st.selectbox("Choose a style:", list(themes.keys()))
 
 # File upload
@@ -64,15 +63,9 @@ def stylize_image(image_bytes, theme):
     uploaded_url = upload_to_imgbb(image_bytes)
     prompt = theme["prompt"]
 
-    if theme["model"] == "realistic":
-        output = replicate.run(
-            f"{REALISTIC_MODEL}:{REALISTIC_VERSION}",
-            input={"image": uploaded_url, "prompt": prompt}
-        )
-    else:
-        output = replicate.run(
-        f"{STYLIZED_MODEL}:{STYLIZED_VERSION}",
-        input={"image": uploaded_url, "style": prompt}
+    output = replicate.run(
+        f"{REALISTIC_MODEL}:{REALISTIC_VERSION}",
+        input={"image": uploaded_url, "prompt": prompt}
     )
 
     return output if isinstance(output, str) else output[0]
